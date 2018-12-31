@@ -72,6 +72,46 @@ func (s *ListDepositsService) Do(ctx context.Context, opts ...RequestOption) (de
 	return res.Deposits, nil
 }
 
+// GetDepositAddressService get deposit address
+type GetDepositAddressService struct {
+	c     *Client
+	asset string
+}
+
+// Asset set asset
+func (s *GetDepositAddressService) Asset(asset string) *GetDepositAddressService {
+	s.asset = asset
+	return s
+}
+
+// Do send request
+func (s *GetDepositAddressService) Do(ctx context.Context, opts ...RequestOption) (res *DepositAddressResponse, err error) {
+	r := &request{
+		method:   "GET",
+		endpoint: "/wapi/v3/depositAddress.html",
+		secType:  secTypeSigned,
+	}
+	r.setParam("asset", s.asset)
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+	res = new(DepositAddressResponse)
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// DepositAddressResponse deposit address
+type DepositAddressResponse struct {
+	Address    string `json:"address"`
+	Success    bool   `json:"success"`
+	AddressTag string `json:"addressTag"`
+	Asset      string `json:"asset"`
+}
+
 // DepositHistoryResponse define deposit history
 type DepositHistoryResponse struct {
 	Success  bool       `json:"success"`
