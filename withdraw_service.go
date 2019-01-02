@@ -3,15 +3,23 @@ package binance
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 )
+
+// WithdrawHistoryResponse define withdraw history response
+type WithdrawResponse struct {
+	Msg     string `json:"msg"`
+	Success bool   `json:"success"`
+}
 
 // CreateWithdrawService create withdraw
 type CreateWithdrawService struct {
-	c       *Client
-	asset   string
-	address string
-	amount  string
-	name    *string
+	c          *Client
+	asset      string
+	address    string
+	addressTag *string
+	amount     string
+	name       *string
 }
 
 // Asset set asset
@@ -23,6 +31,12 @@ func (s *CreateWithdrawService) Asset(asset string) *CreateWithdrawService {
 // Address set address
 func (s *CreateWithdrawService) Address(address string) *CreateWithdrawService {
 	s.address = address
+	return s
+}
+
+// AddressTag set addressTag
+func (s *CreateWithdrawService) AddressTag(addressTag string) *CreateWithdrawService {
+	s.addressTag = &addressTag
 	return s
 }
 
@@ -39,10 +53,10 @@ func (s *CreateWithdrawService) Name(name string) *CreateWithdrawService {
 }
 
 // Do send request
-func (s *CreateWithdrawService) Do(ctx context.Context) (err error) {
+func (s *CreateWithdrawService) Do(ctx context.Context, opts ...RequestOption) (err error) {
 	r := &request{
 		method:   "POST",
-		endpoint: "/wapi/v1/withdraw.html",
+		endpoint: "/wapi/v3/withdraw.html",
 		secType:  secTypeSigned,
 	}
 	m := params{
@@ -50,11 +64,28 @@ func (s *CreateWithdrawService) Do(ctx context.Context) (err error) {
 		"address": s.address,
 		"amount":  s.amount,
 	}
+	if s.addressTag != nil {
+		m["addressTag"] = *s.addressTag
+	}
 	if s.name != nil {
 		m["name"] = *s.name
 	}
-	r.setFormParams(m)
-	_, err = s.c.callAPI(ctx, r)
+	r.setParams(m) // FIXME: setFormParams does not work here
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return err
+	}
+
+	res := new(WithdrawResponse)
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return
+	}
+
+	if !res.Success {
+		return fmt.Errorf(res.Msg)
+	}
+
 	return err
 }
 
@@ -130,12 +161,14 @@ type WithdrawHistoryResponse struct {
 
 // Withdraw define withdraw info
 type Withdraw struct {
-	Amount    float64 `json:"amount"`
-	Address   string  `json:"address"`
-	Asset     string  `json:"asset"`
-	TxID      string  `json:"txId"`
-	ApplyTime int64   `json:"applyTime"`
-	Status    int     `json:"status"`
+	ID         string  `json:"id"`
+	Amount     float64 `json:"amount"`
+	Address    string  `json:"address"`
+	AddressTag string  `json:"addressTag"`
+	TxID       string  `json:"txId"`
+	Asset      string  `json:"asset"`
+	ApplyTime  int64   `json:"applyTime"`
+	Status     int     `json:"status"`
 }
 
 // GetWithdrawFeeService get withdraw fee
