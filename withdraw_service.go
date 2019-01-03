@@ -79,7 +79,7 @@ func (s *CreateWithdrawService) Do(ctx context.Context, opts ...RequestOption) (
 	res := new(WithdrawResponse)
 	err = json.Unmarshal(data, res)
 	if err != nil {
-		return
+		return err
 	}
 
 	if !res.Success {
