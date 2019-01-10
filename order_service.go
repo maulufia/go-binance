@@ -256,6 +256,7 @@ type Order struct {
 	Price            string `json:"price"`
 	OrigQuantity     string `json:"origQty"`
 	ExecutedQuantity string `json:"executedQty"`
+	CummulativeQuoteQuantity string `json:"cummulativeQuoteQty"`
 	Status           string `json:"status"`
 	TimeInForce      string `json:"timeInForce"`
 	Type             string `json:"type"`
