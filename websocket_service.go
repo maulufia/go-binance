@@ -405,7 +405,7 @@ func WsAllBookTickersStatServe(handler WsAllBookTickersServeHandler, errHandler 
 }
 
 // WsAllMiniMarketsStatEvent define array of websocket market mini-ticker statistics events
-type WsAllBookTickersStatEvent []*WsBookTickerStatEvent
+type WsAllBookTickersEvent []*WsBookTickerStatEvent
 
 // WsMiniMarketsStatEvent define websocket market mini-ticker statistics event
 type WsBookTickerStatEvent struct {
