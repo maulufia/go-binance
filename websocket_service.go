@@ -384,3 +384,35 @@ type WsMiniMarketsStatEvent struct {
 	BaseVolume  string `json:"v"`
 	QuoteVolume string `json:"q"`
 }
+
+// WsAllMiniMarketsStatServeHandler handle websocket that push all mini-ticker market statistics for 24hr
+type WsAllBookTickersServeHandler func(event WsAllBookTickersStatEvent)
+
+// WsAllMiniMarketsStatServe serve websocket that push mini version of 24hr statistics for all market every second
+func WsAllBookTickersStatServe(handler WsAllBookTickersServeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/!bookTicker", baseURL)
+	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		var event WsAllBookTickersStatEvent
+		err := json.Unmarshal(message, &event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsAllMiniMarketsStatEvent define array of websocket market mini-ticker statistics events
+type WsAllBookTickersStatEvent []*WsBookTickerStatEvent
+
+// WsMiniMarketsStatEvent define websocket market mini-ticker statistics event
+type WsBookTickerStatEvent struct {
+	UpdateId     int    `json:"u"`
+	Symbol       string `json:"s"`
+	BestBidPrice string `json:"b"`
+	BestBidQty   string `json:"B"`
+	BestAskPrice string `json:"a"`
+	BestAskQty   string `json:"A"`
+}
