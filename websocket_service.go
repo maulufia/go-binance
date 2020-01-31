@@ -385,7 +385,7 @@ type WsMiniMarketsStatEvent struct {
 	QuoteVolume string `json:"q"`
 }
 
-type WsAllBookTickersServeHandler func(event WsAllBookTickersEvent)
+type WsAllBookTickersServeHandler func(event *WsAllBookTickersEvent)
 
 func WsAllBookTickersServe(handler WsAllBookTickersServeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := fmt.Sprintf("%s/!bookTicker", baseURL)
