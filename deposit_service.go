@@ -42,7 +42,7 @@ func (s *ListDepositsService) EndTime(endTime int64) *ListDepositsService {
 func (s *ListDepositsService) Do(ctx context.Context, opts ...RequestOption) (deposits []*Deposit, err error) {
 	r := &request{
 		method:   "POST",
-		endpoint: "/wapi/v1/getDepositHistory.html",
+		endpoint: "/wapi/v3/depositHistory.html",
 		secType:  secTypeSigned,
 	}
 	m := params{}
