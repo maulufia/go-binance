@@ -3,7 +3,6 @@ package binance
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 )
 
 // ListDepositsService list deposits
@@ -65,7 +64,6 @@ func (s *ListDepositsService) Do(ctx context.Context, opts ...RequestOption) (de
 	if err != nil {
 		return
 	}
-	fmt.Println(string(data))
 	res := new(DepositHistoryResponse)
 	err = json.Unmarshal(data, res)
 	if err != nil {
