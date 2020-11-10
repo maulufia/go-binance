@@ -366,6 +366,72 @@ func (s *GetMarginAccountService) Do(ctx context.Context, opts ...RequestOption)
 	return res, nil
 }
 
+// GetIsolatedMarginAccountService get isolated margin account info (jm)
+type GetIsolatedMarginAccountService struct {
+	c *Client
+}
+
+// Do send request
+func (s *GetIsolatedMarginAccountService) Do(ctx context.Context, opts ...RequestOption) (res *IsolatedMarginAccount, err error) {
+	r := &request{
+		method:   "GET",
+		endpoint: "/sapi/v1/margin/isolated/account",
+		secType:  secTypeSigned,
+	}
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+	res = new(IsolatedMarginAccount)
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// IsolatedMarginAccount define isolated margin account info
+type IsolatedMarginAccount struct {
+	Assets []struct {
+		BaseAsset struct {
+			Asset         string `json:"asset"`
+			BorrowEnabled bool   `json:"borrowEnabled"`
+			Borrowed      string `json:"borrowed"`
+			Free          string `json:"free"`
+			Interest      string `json:"interest"`
+			Locked        string `json:"locked"`
+			NetAsset      string `json:"netAsset"`
+			NetAssetOfBtc string `json:"netAssetOfBtc"`
+			RepayEnabled  bool   `json:"repayEnabled"`
+			TotalAsset    string `json:"totalAsset"`
+		} `json:"baseAsset"`
+		QuoteAsset struct {
+			Asset         string `json:"asset"`
+			BorrowEnabled bool   `json:"borrowEnabled"`
+			Borrowed      string `json:"borrowed"`
+			Free          string `json:"free"`
+			Interest      string `json:"interest"`
+			Locked        string `json:"locked"`
+			NetAsset      string `json:"netAsset"`
+			NetAssetOfBtc string `json:"netAssetOfBtc"`
+			RepayEnabled  bool   `json:"repayEnabled"`
+			TotalAsset    string `json:"totalAsset"`
+		} `json:"quoteAsset"`
+		Symbol            string `json:"symbol"`
+		IsolatedCreated   bool   `json:"isolatedCreated"`
+		MarginLevel       string `json:"marginLevel"`
+		MarginLevelStatus string `json:"marginLevelStatus"` // "EXCESSIVE", "NORMAL", "MARGIN_CALL", "PRE_LIQUIDATION", "FORCE_LIQUIDATION"
+		MarginRatio       string `json:"marginRatio"`
+		IndexPrice        string `json:"indexPrice"`
+		LiquidatePrice    string `json:"liquidatePrice"`
+		LiquidateRate     string `json:"liquidateRate"`
+		TradeEnabled      bool   `json:"tradeEnabled"`
+	} `json:"assets"`
+	TotalAssetOfBtc     string `json:"totalAssetOfBtc"`
+	TotalLiabilityOfBtc string `json:"totalLiabilityOfBtc"`
+	TotalNetAssetOfBtc  string `json:"totalNetAssetOfBtc"`
+}
+
 // MarginAccount define margin account info
 type MarginAccount struct {
 	BorrowEnabled       bool        `json:"borrowEnabled"`
