@@ -401,7 +401,12 @@ type WsBookTickerServeHandler func(event *WsBookTickerEvent)
 
 // WsBookTickerServe serve websocket that push any update to the best bid or ask's price or quantity in real-time for a specified symbol
 func WsBookTickerServe(symbol string, handler WsBookTickerServeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
-	endpoint := fmt.Sprintf("%s/%s@bookTicker", baseURL, strings.ToLower(symbol))
+	var endpoint string
+	if symbol != "!" {
+		endpoint = fmt.Sprintf("%s/%s@bookTicker", baseURL, strings.ToLower(symbol))
+	} else { // All symbols
+		endpoint = fmt.Sprintf("%s/!bookTicker", baseURL)
+	}
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
 		event := new(WsBookTickerEvent)
