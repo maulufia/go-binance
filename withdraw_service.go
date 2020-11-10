@@ -3,93 +3,121 @@ package binance
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 )
 
-// WithdrawHistoryResponse define withdraw history response
-type WithdrawResponse struct {
-	Msg     string `json:"msg"`
-	Success bool   `json:"success"`
-}
-
-// CreateWithdrawService create withdraw
+// CreateWithdrawService submits a withdraw request.
+//
+// See https://binance-docs.github.io/apidocs/spot/en/#withdraw
 type CreateWithdrawService struct {
-	c          *Client
-	asset      string
-	address    string
-	addressTag *string
-	amount     string
-	name       *string
+	c                  *Client
+	asset              string
+	withdrawOrderID    *string
+	network            *string
+	address            string
+	addressTag         *string
+	amount             string
+	transactionFeeFlag *bool
+	name               *string
 }
 
-// Asset set asset
-func (s *CreateWithdrawService) Asset(asset string) *CreateWithdrawService {
-	s.asset = asset
+// Asset sets the asset parameter (MANDATORY).
+func (s *CreateWithdrawService) Asset(v string) *CreateWithdrawService {
+	s.asset = v
 	return s
 }
 
-// Address set address
-func (s *CreateWithdrawService) Address(address string) *CreateWithdrawService {
-	s.address = address
+// WithdrawOrderID sets the withdrawOrderID parameter.
+func (s *CreateWithdrawService) WithdrawOrderID(v string) *CreateWithdrawService {
+	s.withdrawOrderID = &v
 	return s
 }
 
-// AddressTag set addressTag
-func (s *CreateWithdrawService) AddressTag(addressTag string) *CreateWithdrawService {
-	s.addressTag = &addressTag
+// Network sets the network parameter.
+func (s *CreateWithdrawService) Network(v string) *CreateWithdrawService {
+	s.network = &v
 	return s
 }
 
-// Amount set amount
-func (s *CreateWithdrawService) Amount(amount string) *CreateWithdrawService {
-	s.amount = amount
+
+// Address sets the address parameter (MANDATORY).
+func (s *CreateWithdrawService) Address(v string) *CreateWithdrawService {
+	s.address = v
 	return s
 }
 
-// Name set name
-func (s *CreateWithdrawService) Name(name string) *CreateWithdrawService {
-	s.name = &name
+// AddressTag sets the addressTag parameter.
+func (s *CreateWithdrawService) AddressTag(v string) *CreateWithdrawService {
+	s.addressTag = &v
 	return s
 }
 
-// Do send request
-func (s *CreateWithdrawService) Do(ctx context.Context, opts ...RequestOption) (err error) {
+// Amount sets the amount parameter (MANDATORY).
+func (s *CreateWithdrawService) Amount(v string) *CreateWithdrawService {
+	s.amount = v
+	return s
+}
+
+// TransactionFeeFlag sets the transactionFeeFlag parameter.
+func (s *CreateWithdrawService) TransactionFeeFlag(v bool) *CreateWithdrawService {
+	s.transactionFeeFlag = &v
+	return s
+}
+
+// Name sets the name parameter.
+func (s *CreateWithdrawService) Name(v string) *CreateWithdrawService {
+	s.name = &v
+	return s
+}
+
+// Do sends the request.
+func (s *CreateWithdrawService) Do(ctx context.Context) (*CreateWithdrawResponse, error) {
 	r := &request{
 		method:   "POST",
 		endpoint: "/wapi/v3/withdraw.html",
 		secType:  secTypeSigned,
 	}
-	m := params{
-		"asset":   s.asset,
-		"address": s.address,
-		"amount":  s.amount,
+	r.setParam("asset", s.asset)
+	r.setParam("address", s.address)
+	r.setParam("amount", s.amount)
+	if v := s.withdrawOrderID; v != nil {
+		r.setParam("withdrawOrderId", *v)
 	}
-	if s.addressTag != nil {
-		m["addressTag"] = *s.addressTag
+	if v := s.network; v != nil {
+		r.setParam("network", *v)
 	}
-	if s.name != nil {
-		m["name"] = *s.name
+	if v := s.addressTag; v != nil {
+		r.setParam("addressTag", *v)
 	}
-	r.setParams(m) // FIXME: setFormParams does not work here
-	data, err := s.c.callAPI(ctx, r, opts...)
+	if v := s.transactionFeeFlag; v != nil {
+		r.setParam("transactionFeeFlag", *v)
+	}
+	if v := s.name; v != nil {
+		r.setParam("name", *v)
+	}
+
+	data, err := s.c.callAPI(ctx, r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	res := new(WithdrawResponse)
-	err = json.Unmarshal(data, res)
-	if err != nil {
-		return err
+	res := &CreateWithdrawResponse{}
+	if err := json.Unmarshal(data, res); err != nil {
+		return nil, err
 	}
 
-	if !res.Success {
-		return fmt.Errorf(res.Msg)
-	}
-
-	return err
+	return res, nil
 }
 
-// ListWithdrawsService list withdraws
+// CreateWithdrawResponse represents a response from CreateWithdrawService.
+type CreateWithdrawResponse struct {
+	ID      string `json:"id"`
+	Msg     string `json:"msg"`
+	Success bool   `json:"success"`
+}
+
+// ListWithdrawsService fetches withdraw history.
+//
+// See https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-supporting-network-user_data
 type ListWithdrawsService struct {
 	c         *Client
 	asset     *string
@@ -98,35 +126,37 @@ type ListWithdrawsService struct {
 	endTime   *int64
 }
 
-// Asset set asset
+// Asset sets the asset parameter.
 func (s *ListWithdrawsService) Asset(asset string) *ListWithdrawsService {
 	s.asset = &asset
 	return s
 }
 
-// Status set status
+// Status sets the status parameter.
 func (s *ListWithdrawsService) Status(status int) *ListWithdrawsService {
 	s.status = &status
 	return s
 }
 
-// StartTime set startTime
+// StartTime sets the startTime parameter.
+// If present, EndTime MUST be specified. The difference between EndTime - StartTime MUST be between 0-90 days.
 func (s *ListWithdrawsService) StartTime(startTime int64) *ListWithdrawsService {
 	s.startTime = &startTime
 	return s
 }
 
-// EndTime set endTime
+// EndTime sets the endTime parameter.
+// If present, StartTime MUST be specified. The difference between EndTime - StartTime MUST be between 0-90 days.
 func (s *ListWithdrawsService) EndTime(endTime int64) *ListWithdrawsService {
 	s.endTime = &endTime
 	return s
 }
 
-// Do send request
+// Do sends the request.
 func (s *ListWithdrawsService) Do(ctx context.Context) (withdraws []*Withdraw, err error) {
 	r := &request{
-		method:   "POST",
-		endpoint: "/wapi/v1/getWithdrawHistory.html",
+		method:   "GET",
+		endpoint: "/wapi/v3/withdrawHistory.html",
 		secType:  secTypeSigned,
 	}
 	if s.asset != nil {
@@ -153,22 +183,25 @@ func (s *ListWithdrawsService) Do(ctx context.Context) (withdraws []*Withdraw, e
 	return res.Withdraws, nil
 }
 
-// WithdrawHistoryResponse define withdraw history response
+// WithdrawHistoryResponse represents a response from ListWithdrawsService.
 type WithdrawHistoryResponse struct {
 	Withdraws []*Withdraw `json:"withdrawList"`
 	Success   bool        `json:"success"`
 }
 
-// Withdraw define withdraw info
+// Withdraw represents a single withdraw entry.
 type Withdraw struct {
-	ID         string  `json:"id"`
-	Amount     float64 `json:"amount"`
-	Address    string  `json:"address"`
-	AddressTag string  `json:"addressTag"`
-	TxID       string  `json:"txId"`
-	Asset      string  `json:"asset"`
-	ApplyTime  int64   `json:"applyTime"`
-	Status     int     `json:"status"`
+	ID              string  `json:"id"`
+	WithdrawOrderID string  `json:"withdrawOrderID"`
+	Amount          float64 `json:"amount"`
+	TransactionFee  float64 `json:"transactionFee"`
+	Address         string  `json:"address"`
+	AddressTag      string  `json:"addressTag"`
+	TxID            string  `json:"txId"`
+	Asset           string  `json:"asset"`
+	ApplyTime       int64   `json:"applyTime"`
+	Network         string  `json:"network"`
+	Status          int     `json:"status"`
 }
 
 // GetWithdrawFeeService get withdraw fee

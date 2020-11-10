@@ -9,6 +9,7 @@ import (
 
 var (
 	baseURL         = "wss://stream.binance.com:9443/ws"
+	baseFutureURL   = "wss://fstream.binance.com/ws"
 	combinedBaseURL = "wss://stream.binance.com:9443/stream?streams="
 	// WebsocketTimeout is an interval for sending ping/pong messages if WebsocketKeepalive is enabled
 	WebsocketTimeout = time.Second * 60
@@ -282,6 +283,16 @@ func WsUserDataServe(listenKey string, handler WsHandler, errHandler ErrHandler)
 	return wsServe(cfg, handler, errHandler)
 }
 
+// WsFutureUserDataServe serve user data handler with listen key
+func WsFutureUserDataServe(listenKey string, handler WsHandler, errHandler ErrHandler, wsConfig ...*WsConfig) (doneC, stopC chan struct{}, err error) {
+	if len(wsConfig) > 0 {
+		baseFutureURL = wsConfig[0].Endpoint
+	}
+	endpoint := fmt.Sprintf("%s/%s", baseFutureURL, listenKey)
+	cfg := newWsConfig(endpoint)
+	return wsServe(cfg, handler, errHandler)
+}
+
 // WsMarketStatHandler handle websocket that push single market statistics for 24hr
 type WsMarketStatHandler func(event *WsMarketStatEvent)
 
@@ -385,13 +396,15 @@ type WsMiniMarketsStatEvent struct {
 	QuoteVolume string `json:"q"`
 }
 
-type WsAllBookTickersServeHandler func(event WsBookTickerEvent)
+// WsBookTickerServeHandler handle websocket that push any update to the best bid or ask's price or quantity in real-time for a specified symbol
+type WsBookTickerServeHandler func(event *WsBookTickerEvent)
 
-func WsAllBookTickersServe(handler WsAllBookTickersServeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
-	endpoint := fmt.Sprintf("%s/!bookTicker", baseURL)
+// WsBookTickerServe serve websocket that push any update to the best bid or ask's price or quantity in real-time for a specified symbol
+func WsBookTickerServe(symbol string, handler WsBookTickerServeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/%s@bookTicker", baseURL, strings.ToLower(symbol))
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
-		var event WsBookTickerEvent
+		event := new(WsBookTickerEvent)
 		err := json.Unmarshal(message, &event)
 		if err != nil {
 			errHandler(err)
@@ -402,8 +415,9 @@ func WsAllBookTickersServe(handler WsAllBookTickersServeHandler, errHandler ErrH
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
+// WsBookTickerEvent define websocket book-ticker event
 type WsBookTickerEvent struct {
-	UpdateId     int    `json:"u"`
+	UpdateID     int64  `json:"u"`
 	Symbol       string `json:"s"`
 	BestBidPrice string `json:"b"`
 	BestBidQty   string `json:"B"`

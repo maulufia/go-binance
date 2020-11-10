@@ -2,13 +2,14 @@ package binance
 
 import (
 	"errors"
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
 )
 
 type websocketServiceTestSuite struct {
 	baseTestSuite
-	origWsServe func(*wsConfig, WsHandler, ErrHandler) (chan struct{}, chan struct{}, error)
+	origWsServe func(*WsConfig, WsHandler, ErrHandler) (chan struct{}, chan struct{}, error)
 	serveCount  int
 }
 
@@ -26,7 +27,7 @@ func (s *websocketServiceTestSuite) TearDownTest() {
 }
 
 func (s *websocketServiceTestSuite) mockWsServe(data []byte, err error) {
-	wsServe = func(cfg *wsConfig, handler WsHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, innerErr error) {
+	wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, innerErr error) {
 		s.serveCount++
 		doneC = make(chan struct{})
 		stopC = make(chan struct{})
@@ -455,6 +456,70 @@ func (s *websocketServiceTestSuite) TestWsUserDataServe() {
     }`))
 }
 
+func (s *websocketServiceTestSuite) testWsFutureUserDataServe(data []byte) {
+	fakeErrMsg := "fake error"
+	s.mockWsServe(data, errors.New(fakeErrMsg))
+	defer s.assertWsServe()
+
+	doneC, stopC, err := WsFutureUserDataServe("listenKey", func(event []byte) {
+		s.r().Equal(data, event)
+	}, func(err error) {
+		s.r().EqualError(err, fakeErrMsg)
+	})
+	s.r().NoError(err)
+	stopC <- struct{}{}
+	<-doneC
+}
+
+func (s *websocketServiceTestSuite) TestWsFutureUserDataServe() {
+	s.testWsFutureUserDataServe([]byte(`{
+		"e":"ACCOUNT_UPDATE",
+		"T":1581261432783,
+		"E":1581261432791,
+		"a":{
+			"B":[{
+				"a":"USDT",
+				"wb":"5.00000000",
+				"cw":"5.00000000"
+			}],
+			"P":[]
+		}
+	}`))
+}
+
+func (s *websocketServiceTestSuite) testWsFutureTestnetUserDataServe(data []byte) {
+	fakeErrMsg := "fake error"
+	s.mockWsServe(data, errors.New(fakeErrMsg))
+	defer s.assertWsServe()
+
+	doneC, stopC, err := WsFutureUserDataServe("listenKey", func(event []byte) {
+		s.r().Equal(data, event)
+	}, func(err error) {
+		s.r().EqualError(err, fakeErrMsg)
+	}, &WsConfig{
+		Endpoint: "wss://stream.binancefuture.com/ws",
+	})
+	s.r().NoError(err)
+	stopC <- struct{}{}
+	<-doneC
+}
+
+func (s *websocketServiceTestSuite) TestWsFutureTestnetUserDataServe() {
+	s.testWsFutureTestnetUserDataServe([]byte(`{
+		"e":"ACCOUNT_UPDATE",
+		"T":1581261432783,
+		"E":1581261432791,
+		"a":{
+			"B":[{
+				"a":"USDT",
+				"wb":"5.00000000",
+				"cw":"5.00000000"
+			}],
+			"P":[]
+		}
+	}`))
+}
+
 func (s *websocketServiceTestSuite) TestWsMarketStatServe() {
 	data := []byte(`{
   		"e": "24hrTicker",
@@ -800,4 +865,46 @@ func (s *websocketServiceTestSuite) assertWsMiniMarketsStatEventEqual(e, a *WsMi
 	r.Equal(e.LowPrice, a.LowPrice, "LowPrice")
 	r.Equal(e.BaseVolume, a.BaseVolume, "BaseVolume")
 	r.Equal(e.QuoteVolume, a.QuoteVolume, "QuoteVolume")
+}
+
+func (s *websocketServiceTestSuite) TestWsBookTickerServe() {
+	data := []byte(`{
+        "u":400900217,
+        "s":"BNBUSDT",
+        "b":"25.35190000",
+        "B":"31.21000000",
+        "a":"25.36520000",
+        "A":"40.66000000"
+	}
+	`)
+	fakeErrMsg := "fake error"
+	s.mockWsServe(data, errors.New(fakeErrMsg))
+	defer s.assertWsServe()
+
+	doneC, stopC, err := WsBookTickerServe("BNBUSDT", func(event *WsBookTickerEvent) {
+		e := &WsBookTickerEvent{
+			UpdateID:     400900217,
+			Symbol:       "BNBUSDT",
+			BestBidPrice: "25.35190000",
+			BestBidQty:   "31.21000000",
+			BestAskPrice: "25.36520000",
+			BestAskQty:   "40.66000000",
+		}
+		s.assertWsBookTickerEventEqual(e, event)
+	}, func(err error) {
+		s.r().EqualError(err, fakeErrMsg)
+	})
+	s.r().NoError(err)
+	stopC <- struct{}{}
+	<-doneC
+}
+
+func (s *websocketServiceTestSuite) assertWsBookTickerEventEqual(e, a *WsBookTickerEvent) {
+	r := s.r()
+	r.Equal(e.UpdateID, a.UpdateID, "UpdateID")
+	r.Equal(e.Symbol, a.Symbol, "Symbol")
+	r.Equal(e.BestBidPrice, a.BestBidPrice, "BestBidPrice")
+	r.Equal(e.BestBidQty, a.BestBidQty, "BestBidQty")
+	r.Equal(e.BestAskPrice, a.BestAskPrice, "BestAskPrice")
+	r.Equal(e.BestAskQty, a.BestAskQty, "BestAskQty")
 }
