@@ -160,6 +160,12 @@ func (s *GetDepositsAddressServiceWithNetwork) Asset(v string) *GetDepositsAddre
 	return s
 }
 
+// Network sets the network parameter.
+func (s *GetDepositsAddressServiceWithNetwork) Network(v string) *GetDepositsAddressServiceWithNetwork {
+	s.network = &v
+	return s
+}
+
 // Status sets the status parameter.
 func (s *GetDepositsAddressServiceWithNetwork) Status(v bool) *GetDepositsAddressServiceWithNetwork {
 	s.status = &v
