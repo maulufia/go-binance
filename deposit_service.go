@@ -179,7 +179,7 @@ func (s *GetDepositsAddressServiceWithNetwork) Do(ctx context.Context) (*GetDepo
 		endpoint: "/sapi/v1/capital/deposit/address",
 		secType:  secTypeSigned,
 	}
-	r.setParam("asset", s.asset)
+	r.setParam("coin", s.asset)
 	if v := s.status; v != nil {
 		r.setParam("status", *v)
 	}
