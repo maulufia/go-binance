@@ -145,3 +145,62 @@ type GetDepositAddressResponse struct {
 	Asset      string `json:"asset"`
 	URL        string `json:"url"`
 }
+
+// GetDepositsAddressWithNetworkService retrieves the details of a deposit address with network.
+type GetDepositsAddressServiceWithNetwork struct {
+	c      *Client
+	asset  string
+	network *string
+	status *bool
+}
+
+// Asset sets the asset parameter (MANDATORY).
+func (s *GetDepositsAddressServiceWithNetwork) Asset(v string) *GetDepositsAddressServiceWithNetwork {
+	s.asset = v
+	return s
+}
+
+// Status sets the status parameter.
+func (s *GetDepositsAddressServiceWithNetwork) Status(v bool) *GetDepositsAddressServiceWithNetwork {
+	s.status = &v
+	return s
+}
+
+// Do sends the request.
+func (s *GetDepositsAddressServiceWithNetwork) Do(ctx context.Context) (*GetDepositAddressWithNetworkResponse, error) {
+	r := &request{
+		method:   "GET",
+		endpoint: "/sapi/v1/capital/deposit/address",
+		secType:  secTypeSigned,
+	}
+	r.setParam("asset", s.asset)
+	if v := s.status; v != nil {
+		r.setParam("status", *v)
+	}
+
+	if v := s.network; v != nil {
+		r.setParam("network", *v)
+	}
+
+	data, err := s.c.callAPI(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &GetDepositAddressWithNetworkResponse{}
+	if err := json.Unmarshal(data, res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// GetDepositAddressResponse represents a response from GetDepositsAddressService.
+type GetDepositAddressWithNetworkResponse struct {
+	Success    bool   `json:"success"`
+	Address    string `json:"address"`
+	AddressTag string `json:"addressTag"`
+	Asset      string `json:"asset"`
+	URL        string `json:"url"`
+}
+

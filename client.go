@@ -410,6 +410,11 @@ func (c *Client) NewGetDepositAddressService() *GetDepositsAddressService {
 	return &GetDepositsAddressService{c: c}
 }
 
+// NewGetDepositAddressWithNetworkService init getting deposit address service
+func (c *Client) NewGetDepositAddressWithNetworkService() *GetDepositsAddressServiceWithNetwork {
+	return &GetDepositsAddressServiceWithNetwork{c: c}
+}
+
 // NewCreateWithdrawService init creating withdraw service
 func (c *Client) NewCreateWithdrawService() *CreateWithdrawService {
 	return &CreateWithdrawService{c: c}
